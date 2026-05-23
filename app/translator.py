@@ -1,13 +1,12 @@
 import asyncio
 import logging
-from functools import lru_cache
-from typing import Optional
-import torch 
+from typing import Dict, Tuple
+import torch
 from transformers import MarianMTModel, MarianTokenizer
 
 
 # logger setup
-logger = logging.getLogger(__name__) 
+logger = logging.getLogger(__name__)
 
 # Language dictionary to multiple language from huggingFace
 SUPPORTED_LANGUAGES = {
@@ -16,93 +15,70 @@ SUPPORTED_LANGUAGES = {
     "es": "Helsinki-NLP/opus-mt-en-es",  # Spanish
 }
 
+
 class Translator:
-    """ 
-    Handels Loading model and inference of MarianMT tranlation models for selected language
-    Models are laoded when called and cached 
-    Statup is fast and models and loaded when slected
+    """
+    Handles loading models and running inference for MarianMT translation models.
+    Models are loaded lazily and cached.
     """
 
     def __init__(self):
-        # Cache stores (tokenizer, model) tupel by the keyed selected langauge 
-        self.models: dict = {}
-    
-    def get_model (
-            self, target_language: str
-    ) -> tuple[MarianTokenizer, MarianMTModel]:
-         # Returns the Tokenizer and model for the selected model
+        # Cache stores (tokenizer, model) tuple by the selected language key.
+        self.models: Dict[str, Tuple[MarianTokenizer, MarianMTModel]] = {}
 
-         if target_language not in SUPPORTED_LANGUAGES:
-             raise ValueError(
-                 f"Language "{target_language}" not supported. "
-                 f"Select from the available: "{list(SUPPORTED_LANGUAGES.keys())}
-             )
-         
-         # Loads into cache if not already in there
-         if target_language not in self.models:
-             model_name = SUPPORTED_LANGUAGES[target_language]
-             logger.info(f"Loading model for language "{target_language}": " {model_name})
+    def get_model(self, target_language: str) -> Tuple[MarianTokenizer, MarianMTModel]:
+        # Returns the tokenizer and model for the selected language.
+        if target_language not in SUPPORTED_LANGUAGES:
+            raise ValueError(
+                f"Language '{target_language}' not supported. "
+                f"Select from the available: {list(SUPPORTED_LANGUAGES.keys())}"
+            )
 
-             tokenizer = MarianTokenizer.from_pretrained(model_name)
-             model = MarianMTModel.from_pretrained(model_name)
+        if target_language not in self.models:
+            model_name = SUPPORTED_LANGUAGES[target_language]
+            logger.info(f"Loading model for language '{target_language}': {model_name}")
 
-             # Eval model to disable droput layers that is only needed for training
-             # Otehrwise different outputs each call
-             model.eval()
+            tokenizer = MarianTokenizer.from_pretrained(model_name)
+            model = MarianMTModel.from_pretrained(model_name)
+            model.eval()
 
-             self.models[target_language] = (tokenizer, model)
-             logger.info(f"Model for "{target_language}" laoded and cached.")
+            self.models[target_language] = (tokenizer, model)
+            logger.info(f"Model for '{target_language}' loaded and cached.")
 
         return self.models[target_language]
 
-    def run_inference (self, text: str, target_language: str) -> str:
-        # Full tokenise - generate - decode pipeline 
-        # Synchronous function to be called in run_in_executor
-
+    def run_inference(self, text: str, target_language: str) -> str:
+        # Full tokenize - generate - decode pipeline.
         tokenizer, model = self.get_model(target_language)
-
-        # Tokenise the input message
-        #return_tensors="pt" - returns PyTorch tensors
-        # padding handles batches of different lengths
-        # truncation prevents errors of long inputs
 
         inputs = tokenizer(
             text,
-            return_tensors='pt',
+            return_tensors="pt",
             padding=True,
             truncation=True,
-            max_length=512
-
+            max_length=512,
         )
-             
-    # Disable gradient to reduce memory usage and improve speeds 
-    # Inference not training
 
         with torch.no_grad():
-            translated_token = model.generate(**inputs)
-        
-        # Decode output tokens into readable string - special toekn removes end-of-sequence marker
-        output = tokenizer.decode(translated_toekns[0], skip_special_toekns=True)
-        return result
-    
+            translated_tokens = model.generate(**inputs)
+
+        output = tokenizer.decode(translated_tokens[0], skip_special_tokens=True)
+        return output
+
     async def translate(self, text: str, target_language: str) -> str:
-        # async interface for translate
-        # offloads CPU-bound inference to thread pool using run_in_executor so no blockages happen
-
+        # Async interface for translation.
         loop = asyncio.get_event_loop()
-
         result = await loop.run_in_executor(
             None,
             self.run_inference,
             text,
-            target_language
-
+            target_language,
         )
         return result
-    
+
     @property
-    def_supported_languages(self) -> dict:
-        # Show supported languages
+    def supported_languages(self) -> Dict[str, str]:
+        # Show supported languages.
         return SUPPORTED_LANGUAGES
 
 
