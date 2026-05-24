@@ -24,9 +24,9 @@ class Translator:
 
     def __init__(self):
         # Cache stores (tokenizer, model) tuple by the selected language key.
-        self.models: Dict[str, Tuple[MarianTokenizer, MarianMTModel]] = {}
+        self._models: Dict[str, Tuple[MarianTokenizer, MarianMTModel]] = {}
 
-    def get_model(self, target_language: str) -> Tuple[MarianTokenizer, MarianMTModel]:
+    def _get_model(self, target_language: str) -> Tuple[MarianTokenizer, MarianMTModel]:
         # Returns the tokenizer and model for the selected language.
         if target_language not in SUPPORTED_LANGUAGES:
             raise ValueError(
@@ -34,7 +34,7 @@ class Translator:
                 f"Select from the available: {list(SUPPORTED_LANGUAGES.keys())}"
             )
 
-        if target_language not in self.models:
+        if target_language not in self._models:
             model_name = SUPPORTED_LANGUAGES[target_language]
             logger.info(f"Loading model for language '{target_language}': {model_name}")
 
@@ -42,14 +42,14 @@ class Translator:
             model = MarianMTModel.from_pretrained(model_name)
             model.eval()
 
-            self.models[target_language] = (tokenizer, model)
+            self._models[target_language] = (tokenizer, model)
             logger.info(f"Model for '{target_language}' loaded and cached.")
 
-        return self.models[target_language]
+        return self._models[target_language]
 
-    def run_inference(self, text: str, target_language: str) -> str:
+    def _run_inference(self, text: str, target_language: str) -> str:
         # Full tokenize - generate - decode pipeline.
-        tokenizer, model = self.get_model(target_language)
+        tokenizer, model = self._get_model(target_language)
 
         inputs = tokenizer(
             text,
@@ -70,7 +70,7 @@ class Translator:
         loop = asyncio.get_event_loop()
         result = await loop.run_in_executor(
             None,
-            self.run_inference,
+            self._run_inference,
             text,
             target_language,
         )
