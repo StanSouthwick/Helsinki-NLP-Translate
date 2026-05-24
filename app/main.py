@@ -1,0 +1,105 @@
+import logging
+from contextlib import asynccontextmanager
+
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import JSONResponse
+
+from app.models import LanguagesResponse, TranslationRequest, TranslationResponse
+from app.translator import Translator
+from app.safeguards import check_input, check_output
+from app.monitoring import instrument_app
+
+# Configure logging for the whole application
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
+logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+
+    # Manages application startup and shutdown.
+    # Translator created once and shared across all requests via app.state.
+    
+    logger.info("Starting up the translation service...")
+    app.state.translator = Translator()
+    logger.info("Translator initialised and ready.")
+
+    yield  # Application runs here — handling requests
+
+    # Shutdown — release resources, close connections if needed
+    logger.info("Shutting down the translation service...")
+
+
+# Create the FastAPI application instance
+app = FastAPI(
+    title="Helsinki-NLP Translation API",
+    description="Production translation API using MarianMT — Helsinki-NLP OPUS-MT models",
+    version="1.0.0",
+    lifespan=lifespan,
+)
+
+# Attach Prometheus monitoring — automatically adds GET /metrics endpoint
+instrument_app(app)
+
+# 3 endpoints: health, supported languages, translate
+
+
+@app.get("/health")
+async def health_check():
+    
+    # Simple liveness check.
+    # Load balancers and orchestrators ping this to verify the service is alive.
+    
+    return {"status": "healthy"}
+
+
+@app.get("/languages", response_model=LanguagesResponse)
+async def get_supported_languages(request: Request):
+    """
+    Returns all supported language codes and their model identifiers.
+    """
+    translator = request.app.state.translator
+    return LanguagesResponse(
+        supported_languages=translator.supported_languages
+    )
+
+
+@app.post("/translate", response_model=TranslationResponse)
+async def translate(request: Request, request_body: TranslationRequest):
+    
+    # Main translation endpoint.
+    # Accepts English text and a target language code.
+    # Returns translated text with metadata.
+    
+    translator = request.app.state.translator
+
+    # Validate input is safe before sending to the model
+    check_input(request_body.text)
+
+    try:
+        translated_text = await translator.translate(
+            text=request_body.text,
+            target_language=request_body.target_language,
+        )
+    except ValueError as e:
+        # 400 Bad Request — unsupported language is the caller's fault
+        logger.error(f"Translation error: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+    # Validate output is safe before returning to caller
+    check_output(translated_text)
+
+    # Include model name in response for transparency
+    model_used = translator.supported_languages[request_body.target_language]
+
+    return TranslationResponse(
+        original_text=request_body.text,
+        translated_text=translated_text,
+        target_language=request_body.target_language,
+        model_used=model_used,
+    )
+        
+    
