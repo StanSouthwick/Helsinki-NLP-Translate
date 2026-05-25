@@ -42,3 +42,33 @@ class LanguagesResponse(BaseModel):
             "de": "Helsinki-NLP/opus-mt-en-de",
             "es": "Helsinki-NLP/opus-mt-en-es"
         }})
+    
+class EvaluationRequest(BaseModel):
+    """
+    Request shape for the /evaluate endpoint.
+    Accepts a translation and a human reference to score against.
+    """
+    source_text: str = Field(
+        description="The original English text that was translated"
+    )
+    translated_text: str = Field(
+        description="The machine translation to evaluate"
+    )
+    reference_text: str = Field(
+        description="The human reference translation to score against"
+    )
+
+
+class EvaluationResponse(BaseModel):
+    """
+    Response shape for the /evaluate endpoint.
+    """
+    source_text: str
+    translated_text: str
+    reference_text: str
+    bleu_score: float = Field(
+        description="BLEU score between 0 and 1. Higher is better."
+    )
+    interpretation: str = Field(
+        description="Human readable interpretation of the score"
+    )

@@ -8,6 +8,8 @@ from app.models import LanguagesResponse, TranslationRequest, TranslationRespons
 from app.translator import Translator
 from app.safeguards import check_input, check_output
 from app.monitoring import instrument_app
+from app.models import EvaluationRequest, EvaluationResponse
+from app.evaluation import calculate_bleu, interpret_bleu
 
 # Configure logging for the whole application
 logging.basicConfig(
@@ -100,6 +102,33 @@ async def translate(request: Request, request_body: TranslationRequest):
         translated_text=translated_text,
         target_language=request_body.target_language,
         model_used=model_used,
+    )
+
+@app.post("/evaluate", response_model=EvaluationResponse)
+async def evaluate_translation(request_body: EvaluationRequest):
+    """
+    Evaluates a machine translation against a human reference using BLEU score.
+    Returns the BLEU score and an interpretation of the translation quality.
+    """
+    bleu_score = calculate_bleu(
+        translated_text=request_body.translated_text,
+        reference_text=request_body.reference_text,
+    )
+    interpretation = interpret_bleu(bleu_score)
+
+    return EvaluationResponse(
+        source_text=request_body.source_text,
+        translated_text=request_body.translated_text,
+        reference_text=request_body.reference_text,
+        bleu_score=bleu_score,
+        interpretation=interpretation,
+    )
+    return EvaluationResponse(
+        source_text=request_body.source_text,
+        translated_text=request_body.translated_text,
+        reference_text=request_body.reference_text,
+        bleu_score=bleu_score,
+        interpretation=interpretation,
     )
         
     
