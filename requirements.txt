@@ -31,6 +31,9 @@ pytest==9.0.3
 # Extends pytest to handle async def test functions
 pytest-asyncio==1.3.0
 
+# Standard BLEU score implementation — used for continuous translation evaluation
+sacrebleu==2.4.3
+
 # ============================================================
 # ADDITIONAL DEPENDENCIES — installed automatically through pip freeze
 # ============================================================

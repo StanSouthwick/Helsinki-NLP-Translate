@@ -4,11 +4,11 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 
-from app.models import LanguagesResponse, TranslationRequest, TranslationResponse
+from app.schemas import LanguagesResponse, TranslationRequest, TranslationResponse
 from app.translator import Translator
 from app.safeguards import check_input, check_output
 from app.monitoring import instrument_app
-from app.models import EvaluationRequest, EvaluationResponse
+from app.schemas import EvaluationRequest, EvaluationResponse
 from app.evaluation import calculate_bleu, interpret_bleu
 
 # Configure logging for the whole application
