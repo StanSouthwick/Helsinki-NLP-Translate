@@ -1,5 +1,3 @@
-# Docker compose file version
-version = "3.9"
 
 services:
 # Translation API service
@@ -26,4 +24,4 @@ services:
       retries: 3
       start_period: 60s
 
-      
+

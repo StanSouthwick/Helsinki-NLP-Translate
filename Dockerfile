@@ -10,12 +10,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Download model weights 
 # This is done at build time to ensure the model is ready when the container starts.
-RUN python -c "\
-    from transformers import MarianMTModel, MarianTokenizer; \
-    models = ['Helsinki-NLP/opus-mt-en-fr', 'Helsinki-NLP/opus-mt-en-de', 'Helsinki-NLP/opus-mt-en-es']; \
-    [MarianMTModel.from_pretrained(m) for m in models]; \
-    [MarianTokenizer.from_pretrained(m) for m in models]; \
-    print('All models downloaded successfully')"
+COPY download_models.py . 
+RUN python download_models.py
 
 # Copy application code
 COPY app/ ./app/
