@@ -2,7 +2,7 @@ import asyncio
 import logging
 from typing import Dict, Tuple
 import torch
-from transformers import MarianMTModel, MarianTokenizer
+from transformers import MarianMTModel, MarianTokenizer # type: ignore
 
 
 # logger setup
@@ -40,6 +40,7 @@ class Translator:
 
             tokenizer = MarianTokenizer.from_pretrained(model_name)
             model = MarianMTModel.from_pretrained(model_name)
+            # Evaluation mode disables droput layers used in training - ensures deterministic output during inference.
             model.eval()
 
             self._models[target_language] = (tokenizer, model)
@@ -51,6 +52,9 @@ class Translator:
         # Full tokenize - generate - decode pipeline.
         tokenizer, model = self._get_model(target_language)
 
+        # return_tensors="pt" for PyTorch tensors
+        # padding handles batches of different lengths
+        # truncation ensures we don't exceed the model's max_length
         inputs = tokenizer(
             text,
             return_tensors="pt",
@@ -59,6 +63,8 @@ class Translator:
             max_length=512,
         )
 
+        # Disable gradient calculations for inference
+        # Skips computation graph, reduces memory and speeds up the process
         with torch.no_grad():
             translated_tokens = model.generate(**inputs)
 
