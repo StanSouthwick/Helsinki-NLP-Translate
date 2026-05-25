@@ -1,0 +1,29 @@
+# Docker compose file version
+version = "3.9"
+
+services:
+# Translation API service
+  api:
+    build: .
+
+    # Expose port 8000 for the API
+    ports:
+      - "8000:8000"
+
+    # Environment variables for configuration
+    environment:
+      - LOG_LEVEL=info
+
+      # Restart policy to handle transient errors      # Automatically restart the container if it crashes, but not on manual stop.
+
+    restart: unless-stopped
+
+    # Health check to monitor container health and restart if unhealthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+      
