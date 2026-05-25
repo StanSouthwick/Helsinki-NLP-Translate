@@ -39,7 +39,7 @@ def check_input(text: str) -> None:
         if re.search(pattern, text_lower):
             logger.warning(f"Potential prompt injection detected in input: '{text}'")
             raise HTTPException(status_code=422,
-                                detail="Input contains suspicious patterns that may indicate prompt injection."
+                                detail="Input contains disallowed content"
                                 )
     logger.info("Input text passed safety checks.")
 
