@@ -77,7 +77,7 @@ async def translate(request: Request, request_body: TranslationRequest):
     """
     translator = request.app.state.translator
 
-    # Validate language is supported before anything else
+    # Validate language is supported before anything else - known potential failure
     # Explicit early check prevents KeyError downstream
     if request_body.target_language not in translator.supported_languages:
         raise HTTPException(
@@ -89,7 +89,8 @@ async def translate(request: Request, request_body: TranslationRequest):
     # Validate input is safe before sending to the model
     check_input(request_body.text)
 
-    try:
+    # Any unexpected errors during translation will be caught and handled
+    try: 
         translated_text = await translator.translate(
             text=request_body.text,
             target_language=request_body.target_language,
