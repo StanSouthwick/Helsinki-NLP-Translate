@@ -68,15 +68,23 @@ async def get_supported_languages(request: Request):
         supported_languages=translator.supported_languages
     )
 
-
 @app.post("/translate", response_model=TranslationResponse)
 async def translate(request: Request, request_body: TranslationRequest):
-    
-    # Main translation endpoint.
-    # Accepts English text and a target language code.
-    # Returns translated text with metadata.
-    
+    """
+    Main translation endpoint.
+    Accepts English text and a target language code.
+    Returns translated text with metadata.
+    """
     translator = request.app.state.translator
+
+    # Validate language is supported before anything else
+    # Explicit early check prevents KeyError downstream
+    if request_body.target_language not in translator.supported_languages:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Language '{request_body.target_language}' not supported. "
+                   f"Choose from: {list(translator.supported_languages.keys())}"
+        )
 
     # Validate input is safe before sending to the model
     check_input(request_body.text)
@@ -87,14 +95,14 @@ async def translate(request: Request, request_body: TranslationRequest):
             target_language=request_body.target_language,
         )
     except ValueError as e:
-        # 400 Bad Request — unsupported language is the caller's fault
+        # Fallback error handling for any unexpected ValueError
         logger.error(f"Translation error: {e}")
         raise HTTPException(status_code=400, detail=str(e))
 
     # Validate output is safe before returning to caller
     check_output(translated_text)
 
-    # Include model name in response for transparency
+    # Safe to look up now — language already validated above
     model_used = translator.supported_languages[request_body.target_language]
 
     return TranslationResponse(
