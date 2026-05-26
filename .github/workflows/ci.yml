@@ -5,6 +5,7 @@ on: [push]
 jobs:
     test:
         runs-on: ubnutu-latest
+        timeout-minutes: 15
 
         steps:
             # Check out the code
