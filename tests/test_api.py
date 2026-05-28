@@ -4,6 +4,7 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 
+# Client fixture to provide a TestClient for the FastAPI app with the translator mocked.
 @pytest.fixture
 def client():
     """
