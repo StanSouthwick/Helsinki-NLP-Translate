@@ -4,7 +4,7 @@ on: [push]
 
 jobs:
     test:
-        runs-on: ubnutu-latest
+        runs-on: ubuntu-latest
         timeout-minutes: 15
 
         steps:
