@@ -189,7 +189,7 @@ promotion to production.
 ### Q6 — Input and output safeguarding ✅ Implemented
 `safeguards.py` validates all inputs before they reach the model and all 
 outputs before they reach the caller. Input checks include empty string 
-detection, repetition analysis, and regex-based prompt injection detection. 
+detection, and regex-based prompt injection detection. 
 Output checks catch empty or malformed model responses. Error messages for 
 rejected inputs are deliberately vague to prevent attackers from enumerating 
 detection patterns.
