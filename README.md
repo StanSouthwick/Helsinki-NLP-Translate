@@ -163,7 +163,7 @@ The `/evaluate` endpoint accepts a machine translation and a human reference
 and returns a BLEU score. In production this would be integrated into a 
 monitoring pipeline — a sample of translations reviewed by human annotators 
 periodically, scored against their corrections, and tracked over time. A score 
-drop below a defined threshold would trigger an alert.
+drop below a defined threshold would trigger an alert. BLEU is resource independent, that calculates evaluation instantly and is consistent.
 
 ### Q3 — Concurrent requests ✅ Implemented
 Model inference runs via `asyncio.run_in_executor` in a thread pool. The async 
