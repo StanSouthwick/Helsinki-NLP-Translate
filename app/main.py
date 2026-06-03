@@ -132,12 +132,4 @@ async def evaluate_translation(request_body: EvaluationRequest):
         bleu_score=bleu_score,
         interpretation=interpretation,
     )
-    return EvaluationResponse(
-        source_text=request_body.source_text,
-        translated_text=request_body.translated_text,
-        reference_text=request_body.reference_text,
-        bleu_score=bleu_score,
-        interpretation=interpretation,
-    )
-        
     
