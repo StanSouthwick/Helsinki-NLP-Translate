@@ -2,7 +2,7 @@ import asyncio
 import logging
 from typing import Dict, Tuple
 import torch
-from transformers import MarianMTModel, MarianTokenizer # type: ignore
+from transformers import MarianMTModel, MarianTokenizer 
 
 
 # logger setup
