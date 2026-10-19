@@ -28,6 +28,8 @@ def calculate_bleu(translated_text: str, reference_text: str) -> float:
     sacrebleu expects a list of hypotheses and a list of reference lists.
     Returns a float between 0 and 1 — normalised from sacrebleu's 0-100 scale.
     """
+    print (translated_text, reference_text)
+    
     result = sacrebleu.corpus_bleu(
         hypotheses=[translated_text],
         references=[[reference_text]]

@@ -3,25 +3,35 @@ name: CI
 on: [push]
 
 jobs:
-    test:
-        runs-on: ubuntu-latest
-        timeout-minutes: 15
+  test:
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-        steps:
-            # Check out the code
-            - name: Checkout code
-              uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
 
-            # Set up Python
-            - name: Set up Python
-              uses: actions/setup-python@v5
-              with:
-                  python-version: '3.13'
-            
-            # Install dependencies
-            - name: Install dependencies
-              run: pip install -r requirements.txt
-            
-            # Run tests
-            - name: Run tests
-              run: pytest tests/ -v
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run tests
+        run: pytest tests/ -v
+
+  build:
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t translate-api:${{ github.sha }} .
